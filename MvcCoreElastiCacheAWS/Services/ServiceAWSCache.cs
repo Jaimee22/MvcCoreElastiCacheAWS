@@ -1,4 +1,5 @@
-﻿using MvcCoreElastiCacheAWS.Helpers;
+﻿using Microsoft.Extensions.Caching.Distributed;
+using MvcCoreElastiCacheAWS.Helpers;
 using MvcCoreElastiCacheAWS.Models;
 using Newtonsoft.Json;
 using StackExchange.Redis;
@@ -7,16 +8,16 @@ namespace MvcCoreElastiCacheAWS.Services
 {
     public class ServiceAWSCache
     {
-        private IDatabase cache;
+        private IDistributedCache cache;
 
-        public ServiceAWSCache()
-        { 
-            this.cache = HelperCacheRedis.Connection.GetDatabase();
+        public ServiceAWSCache(IDistributedCache cache )
+        {
+            this.cache = cache;
         }
 
         public async Task<List<Coche>> GetCochesFavoritosAsync()
         {
-            string jsonCoches = await this.cache.StringGetAsync("cochesfavoritos");
+            string jsonCoches = await this.cache.GetStringAsync("cochesfavoritos");
             if (jsonCoches == null)
             {
                 return null;
@@ -40,7 +41,10 @@ namespace MvcCoreElastiCacheAWS.Services
 
             coches.Add(car);
             string jsonCoches = JsonConvert.SerializeObject(coches);
-            await this.cache.StringSetAsync("cochesfavoritos", jsonCoches, TimeSpan.FromMinutes(30));
+            DistributedCacheEntryOptions cacheOptions = new DistributedCacheEntryOptions { 
+                SlidingExpiration  = TimeSpan.FromMinutes(30),
+            };
+            await this.cache.SetStringAsync("cochesfavoritos", jsonCoches,cacheOptions);
 
         }
 
@@ -53,12 +57,16 @@ namespace MvcCoreElastiCacheAWS.Services
                 cars.Remove(cocheEliminar);
                 if (cars.Count == 0)
                 {
-                    await this.cache.KeyDeleteAsync("cochesfavoritos");
+                    await this.cache.RemoveAsync("cochesfavoritos");
                 }
                 else 
                 {
                     string jsonCoches = JsonConvert.SerializeObject(cars);
-                    await this.cache.StringSetAsync("cochesfavoritos", jsonCoches, TimeSpan.FromMinutes(30));
+                    DistributedCacheEntryOptions options = new DistributedCacheEntryOptions
+                    {
+                        SlidingExpiration = TimeSpan.FromMinutes(30),
+                    };
+                    await this.cache.SetStringAsync("cochesfavoritos", jsonCoches,options);
                 }
             
             }
