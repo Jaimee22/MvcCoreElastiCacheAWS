@@ -43,7 +43,9 @@
                 @Html.DisplayFor(modelItem => item.Imagen)
             </td>
             <td>
-                <a asp-controller="Coches" asp-action="Details" asp-route-id="@item.IdCoche" class="btn btn-primary">Details</a>
+
+                    <a asp-controller="Coches" asp-action="Details" asp-route-id="@item.IdCoche" class="btn btn-primary">Details</a>
+                    <a asp-controller="Coches" asp-action="SeleccionarFavorito" asp-route-idcoche="@item.IdCoche" class="btn btn-primary">Seleccionar Favorito</a>
             </td>
         </tr>
 }
